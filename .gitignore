@@ -24,6 +24,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
+.env.local
 .env*.local
 
 # Firebase service account key (nunca commitar)
@@ -37,4 +39,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# AI and editor configs
+.claude/
+.cursor/
 .cursorrules
+.cursorruels
