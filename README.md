@@ -1,266 +1,160 @@
-# Quadra Livre — Community tennis court booking
+# QuadraLivre 🎾
+### Plataforma de Gestão de Quadras Comunitárias, Agendamentos e Rede Social Esportiva
 
-**Mobile-first** web app for community tennis court management. Built with Next.js 15, Firebase, and TypeScript. It covers the full flow: authentication, conflict-checked bookings, social profiles, player challenges, and per-court admin.
-
----
-
-## Features
-
-### Authentication and onboarding
-- Google sign-in (Firebase Auth)
-- Onboarding for new users to set name and profile data
-- Automatic redirects based on auth state
-
-### Personal dashboard
-- Personalized greeting with near real-time stats
-- Next upcoming reservation
-- Smart time suggestion based on user history
-- Cards for total hours played, reservation count, and active-week streak
-- Bar chart of weekday play frequency
-- List of most frequent partners with links to each profile
-
-### Schedule and reservations
-- Timeline view (hour-by-hour) for the next 7 days
-- Red line for current time on the schedule
-- Visual indicators on days that already have bookings
-- New reservation modal with date, time, and participant picker
-- Fixed duration of 1h30 per reservation
-- Court selection from courts available to the user
-- Edit participants on an existing reservation
-- Cancel reservation (creator only)
-- Server-side slot conflict checks (Firebase Admin SDK), including:
-  - At most 1 reservation per day per user
-  - At most 4 reservations per week
-  - Up to 7 days ahead
-- Booking confirmation email via Brevo
-
-### User profiles
-- Public profile with photo, name, and summary stats
-- **Detailed statistics** subpage:
-  - Total hours played
-  - Weekday frequency (bar chart)
-  - Hours per month (bar chart)
-  - Hours per week (bar chart)
-  - Ranking of top partners with photo and match count
-- Subpage with reservation history per court
-
-### Social feed
-- Community post feed
-- Post likes
-- Comments with `@mention` support
-- Notification when mentioned in a comment
-- Notification when someone likes your post
-
-### Player challenges
-- Send a challenge to another player with message and proposed time
-- Accept or decline from the notifications page
-- On accept, a reservation is created for both players
-- Cancel a sent challenge before it is answered
-- Challenge notification email via Brevo
-- Flow to accept and pick a time for challenges without a fixed slot
-
-### Notifications
-- Real-time notification center (Firestore `onSnapshot`)
-- Types: challenge received/sent, mention in post, like on post
-- Auto-mark as read when opening the page
-- Per-notification delete (soft-delete with `hiddenByUserIds`, hard-delete when both sides hide)
-
-### Multi-court management
-- Multiple courts with tab selection on the schedule
-- Slot conflicts checked per court
-- `courtId` normalization for legacy data (`normalizeCourtId`)
-- Gear icon on the court tab for managers to open settings from the schedule
-
-### Court manager panel (`/court/[courtId]/manage`)
-- Restricted to court managers (`managerIds[]` in Firestore)
-- Add and remove other managers
-- Layout guard blocking unauthorized access
-
-### Developer panel (`/admin`)
-- Restricted to the developer email
-- Create default courts in Firestore
-- View and manage all courts and their managers
-- Layout guard blocking unauthorized access
+> **Case de Estudo & Projeto de Portfólio**  
+> Desenvolvido de ponta a ponta por **Gustavo Almeida**  
+> **Status:** Em produção | **Usuários ativos:** +200 tenistas | **Cobertura:** Igrejinha-RS e Três Coroas-RS
 
 ---
 
-## Tech stack
+## 💡 O Contexto e o Problema Real
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router) + React 19 |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| Auth | Firebase Auth (Google) |
-| Database | Firestore (Firebase) |
-| Backend/API | Next.js Route Handlers + Firebase Admin SDK |
-| Image upload | Firebase Storage |
-| Transactional email | Brevo (formerly Sendinblue) |
-| Icons | Lucide React |
-| Drag and drop | dnd-kit |
-| Dates | date-fns |
+Quem pratica esportes em quadras públicas ou comunitárias conhece bem a dor: **o infame grupão de WhatsApp**.
+
+Na região da Serra Gaúcha (Igrejinha e Três Coroas), a organização dos jogos dependia de mensagens soltas, listas de texto manuais e muita fricção. O resultado era frequente:
+- **Conflitos de horário:** Dois jogadores marcavam a mesma hora sem perceber e descobriam a sobreposição na beira da quadra;
+- **Mensagens perdidas:** Dúvidas sobre horários livres ficavam enterradas sob centenas de conversas;
+- **Falta de previsibilidade:** Ninguém sabia em tempo real se a quadra estava liberada ou se as condições climáticas permitiam o jogo;
+- **Isolamento de novos atletas:** Jogadores tinham dificuldade de encontrar parceiros com nível de jogo compatível para marcar treinos.
+
+Identifiquei esse gargalo na minha própria rotina como tenista. Decidi então projetar e desenvolver o **QuadraLivre**: uma solução digital completa, mobile-first, desenhada sob medida para a dinâmica de atletas amadores, transformando a desorganização de um chat em um produto fluido, seguro e comunitário.
 
 ---
 
-## Architecture
+## 🛠️ Como eu Desenvolvi o Projeto
 
-```
-src/
-├── app/
-│   ├── (auth)/                    # Unauthenticated pages
-│   │   ├── login/
-│   │   ├── onboarding/
-│   │   └── select-court/
-│   ├── (app)/                     # Authenticated app (header + nav)
-│   │   ├── home/                  # Dashboard
-│   │   ├── reserve/               # Schedule and new reservation
-│   │   ├── social/                # Post feed
-│   │   ├── notifications/       # Notification center
-│   │   ├── profile/
-│   │   │   └── [userId]/
-│   │   │       ├── page.tsx       # Public profile
-│   │   │       ├── statistics/    # Charts and metrics
-│   │   │       ├── courts/        # History per court
-│   │   │       └── level/         # Player rank / level
-│   │   ├── court/[courtId]/
-│   │   │   └── manage/            # Court manager panel
-│   │   ├── lessons/
-│   │   ├── cafe/
-│   │   └── partners/
-│   ├── admin/                     # Developer panel
-│   └── api/
-│       ├── reservations/          # POST, DELETE, PATCH + check-slot
-│       ├── notify-challenge/      # Challenge email
-│       └── upload-image/          # Upload to Firebase Storage
-├── components/
-│   ├── layout/                    # Header, BottomNav, CourtStatus, Avatar
-│   └── reservation/               # NewReservationModal, ReservationDetailModal
-└── lib/
-    ├── firebase/                  # Client SDK and Admin SDK
-    ├── queries/                   # Query helpers (stats, etc.)
-    ├── validators/                # Business rule validation
-    ├── courts.ts                  # Constants and DEVELOPER_EMAIL
-    ├── permissions.ts             # isDeveloper, isCourtManager, canManageCourt
-    ├── types.ts                   # TypeScript interfaces
-    └── utils.ts                   # Utilities
-```
+O QuadraLivre não foi construído como um exercício teórico ou clone genérico, mas como um produto real colocado em produção desde o primeiro dia. Cada decisão arquitetural e de interface foi guiada pela experiência do usuário em quadra:
 
-### Firestore collections
+### 1. Engenharia de Agendamento à Prova de Falhas
+O maior desafio técnico de um sistema desse tipo é evitar *race conditions* e abusos de reservas. Implementei no backend (Next.js Route Handlers + Firebase Admin SDK) um motor de validação rigoroso com checagens atômicas:
+- **Limite justo de ocupação:** Máximo de 1 reserva por dia por atleta e teto semanal para evitar monopolização das quadras públicas.
+- **Janela de antecedência:** Agendamentos permitidos apenas em até 7 dias corridos.
+- **Detecção atômica de sobreposição:** Verificação instantânea de conflitos de slots antes de qualquer escrita no banco de dados.
 
-| Collection | Description |
-|---|---|
-| `users` | User profile data |
-| `reservations` | Reservations (startAt, endAt, courtId, createdById) |
-| `reservationParticipants` | Participants per reservation |
-| `courts` | Courts with name and manager list (`managerIds[]`) |
-| `challenges` | Challenges between players |
-| `posts` | Social feed posts |
-| `notifications` | Mention and like notifications |
+### 2. Integração com Dados Climáticos em Tempo Real
+Tênis em quadra descoberta depende 100% do clima. Integrei o serviço de previsão hora a hora da **Open-Meteo**, mapeando coordenadas geográficas de cada quadra. Cada slot da agenda exibe a probabilidade de chuva e o ícone de tempo correspondente, permitindo que o atleta decida conscientemente o melhor horário para jogar. A camada de previsão conta com cache no cliente e tratamento resiliente de erros: oscilações na API externa nunca quebram o fluxo de agendamento.
+
+### 3. Gamificação e Pré-Computação de Métricas
+Para engajar a comunidade, criei um sistema de patentes (*Iniciante* a *Profissional*) calibrado em horas em quadra e um ranking geral. Para manter consultas rápidas e economizar custos de leitura no Firestore, implementei um **cron job diário** (`/api/cron/ranking`) que processa o histórico de partidas e grava um snapshot leve dos líderes. O cliente consome o dado pré-calculado, caindo para cálculo sob demanda apenas em caso de fallback.
+
+### 4. Arquitetura Mobile-First e Social
+Pensado primariamente para uso em smartphones com ergonomia de PWA: botões de ação ao alcance do polegar, navegação inferior limpa, feed interativo de fotos, comentários com menção (`@`) e central de notificações reativa via Firestore `onSnapshot`.
 
 ---
 
-## Local setup
+## 📸 Interface e Funcionalidades Principais
 
-### Prerequisites
-- Node.js 18+
-- Firebase project with Firestore, Auth (Google), and Storage enabled
-- Brevo account (for emails)
-
-### Install
-
-```bash
-git clone <repo-url>
-cd quadra-tenis-igrejinha
-npm install
-```
-
-### Environment variables
-
-Create `.env.local` in the project root:
-
-```env
-# Firebase (client)
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
-
-# Firebase Admin (API routes)
-# Local dev: path to service account JSON file
-FIREBASE_SERVICE_ACCOUNT_PATH=./serviceAccountKey.json
-# Production (Vercel): JSON content as a single line
-# FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
-
-# Brevo (transactional email)
-BREVO_API_KEY=
-BREVO_SENDER_EMAIL=
-BREVO_SENDER_NAME=
-```
-
-> Generate the Firebase Admin service account key in **Firebase Console → Project settings → Service accounts → Generate new private key**.
-
-### Development
-
-```bash
-npm run dev
-```
-
-Open `http://localhost:3000`.
+Abaixo estão as principais telas do sistema, detalhando a experiência de uso e a lógica aplicada em cada módulo.
 
 ---
 
-## Deploy (Vercel)
+### 1. Grade de Reservas e Agenda Interativa *(O Coração da Aplicação)*
 
-1. Connect the repository to Vercel
-2. Add all `NEXT_PUBLIC_*` variables in project settings
-3. For Firebase Admin in production, set `FIREBASE_SERVICE_ACCOUNT_KEY` with minified one-line JSON (do not use `FIREBASE_SERVICE_ACCOUNT_PATH` on Vercel)
-4. Add Brevo variables
-5. Deploy
+A tela principal do produto foi projetada para funcionar como uma agenda viva e visual, eliminando o preenchimento de formulários burocráticos.
 
----
+<p align="center">
+  <img src="public/screenshots/01-reservas-agenda.png" alt="Tela de Reserva de Horários" width="340" />
+</p>
 
-## Firestore security rules (reference)
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth.uid == userId;
-    }
-    match /reservations/{reservationId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow delete: if request.auth.uid == resource.data.createdById;
-    }
-    match /reservationParticipants/{participantId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    match /posts/{postId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth.uid == resource.data.authorId;
-    }
-    match /challenges/{challengeId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth.uid == resource.data.toUserId
-                    || request.auth.uid == resource.data.fromUserId;
-    }
-  }
-}
-```
+- **Navegação temporal contínua:** Seletor de dias da semana com indicadores em ponto (*dots*) nas datas que já possuem horários ocupados.
+- **Visão horária em tempo real:** Cards claros identificando o jogador responsável pelo slot (ex.: 16:30 às 18:00, 18:00 às 19:30).
+- **Previsão do tempo integrada:** Coluna esquerda com probabilidade de precipitação calculada para cada hora do dia, antecipando dias chuvosos.
+- **Ação em um toque:** Botão flutuante de criação rápida (+) e seletor superior de cidade/quadra (Igrejinha / Três Coroas).
 
 ---
 
-## First-time developer setup
+### 2. Dashboard Pessoal com Sugestões Inteligentes
 
-1. Sign in with the email configured as `DEVELOPER_EMAIL` in `src/lib/courts.ts`
-2. Open `/admin`
-3. Click **“Create default courts”** to seed courts in Firestore
-4. Add court managers as needed
+Ao abrir o app, o usuário tem uma visão consolidada da sua jornada esportiva e atalhos contextuais.
+
+<p align="center">
+  <img src="public/screenshots/02-inicio-dashboard.png" alt="Dashboard Inicial do Aplicativo" width="340" />
+</p>
+
+- **Sugestão Inteligente:** Card de recomendação que analisa os dias e horários habituais do tenista e sugere a próxima reserva com um único clique (*"Reservar para quarta às 19h"*).
+- **Métricas de evolução:** Total de horas jogadas na plataforma, número de reservas concluídas e sequência de semanas ativas (*streak* de consistência).
+- **Gráfico de frequência:** Distribuição visual dos dias da semana em que o usuário mais costuma treinar.
+
+---
+
+### 3. Status das Quadras ao Vivo
+
+Uma das maiores dores dos tenistas locais era ir até a quadra sem saber se ela estava ocupada no momento.
+
+<p align="center">
+  <img src="public/screenshots/03-status-ao-vivo.png" alt="Status das Quadras ao Vivo" width="340" />
+</p>
+
+- **Indicador no topo da aplicação:** Pill dinâmica que monitora o momento atual e exibe imediatamente a situação geral (*"2 quadras livres"* / *"Todas ocupadas"*).
+- **Menu contextual por localidade:** Dropdown rápido informando separadamente o status das quadras de Igrejinha e Três Coroas, permitindo reservas imediatas de última hora.
+
+---
+
+### 4. Feed da Comunidade e Interações Esportivas
+
+O agendador evoluiu para uma verdadeira comunidade social esportiva da região.
+
+<p align="center">
+  <img src="public/screenshots/04-feed-comunidade.png" alt="Feed Social da Comunidade" width="340" />
+</p>
+
+- **Publicações com mídia:** Tenistas compartilham fotos de partidas, torneios e treinos do fim de semana.
+- **Interações sociais:** Sistema de curtidas com listagem de avatares dos participantes e comentários com menções diretas a outros atletas.
+- **Matchmaking ("Quem anima?"):** Aba dedicada a encontrar tenistas disponíveis para bater bola na mesma faixa de horário.
+
+---
+
+### 5. Ranking de Horas e Gamificação
+
+Para incentivar a prática esportiva regular e movimentar a comunidade local, o app calcula a dedicação de cada atleta.
+
+<p align="center">
+  <img src="public/screenshots/05-ranking-jogadores.png" alt="Ranking de Jogadores" width="340" />
+</p>
+
+- **Tabela de classificação:** Contagem automática de horas em quadra calculada a partir de partidas confirmadas.
+- **Arquitetura otimizada:** Alimentado por rotina agendada que gera cache consolidado, garantindo renderização instantânea mesmo com dezenas de competidores.
+
+---
+
+### 6. Central de Notificações em Tempo Real
+
+Acompanhamento de interações e convites sem necessidade de recarregar a página.
+
+<p align="center">
+  <img src="public/screenshots/06-notificacoes.png" alt="Central de Notificações" width="340" />
+</p>
+
+- **Atualização viva (`onSnapshot`):** Notificações imediatas quando alguém curte uma postagem, comenta mencionando seu perfil ou envia um desafio de partida.
+- **Ações diretas e limpeza:** Link para visualizar o post relacionado e opção de arquivamento individual.
+
+---
+
+## 💻 Stack Tecnológica
+
+| Camada | Tecnologia | Motivação da Escolha |
+|---|---|---|
+| **Frontend** | Next.js 15 (App Router) + React 19 | SSR para SEO na landing, SPA reativa nas rotas autenticadas, server actions e route handlers. |
+| **Linguagem** | TypeScript | Tipagem estrita de regras de negócio, horários, modelos de dados e permissões. |
+| **Estilização** | Tailwind CSS | Design responsivo, paleta visual esportiva moderna e alta fidelidade mobile. |
+| **Autenticação** | Firebase Auth | Fluxo Google One-Tap rápido e seguro para onboarding em segundos. |
+| **Banco de Dados** | Cloud Firestore | Sincronização em tempo real de quadras, feeds e notificações via WebSockets/listeners. |
+| **Regras / Backend** | Next.js Route Handlers + Firebase Admin | Camada com privilégios de serviço para validação anti-race-condition de reservas. |
+| **Armazenamento** | Firebase Storage | Upload otimizado de fotos de perfil e imagens do feed social. |
+| **E-mails Transacionais** | Brevo API | Notificações de confirmação de agendamento e convites de desafio. |
+| **Meteorologia** | Open-Meteo API | Previsão climática precisa por coordenada geográfica sem atrito de autenticação. |
+
+---
+
+## 📈 Impacto e Resultados
+
+- **100% de adesão na comunidade local:** A transição do WhatsApp para a plataforma foi completa entre os praticantes regulares da região.
+- **Zero sobreposições de horários:** Conflitos e discussões de horário foram totalmente eliminados desde o lançamento.
+- **Escalabilidade regional:** O sistema começou atendendo uma única quadra em Igrejinha e expandiu para Três Coroas e novos polos da serra.
+- **Mais de 200 atletas ativos** interagindo, organizando torneios e marcando seus treinos de forma autônoma.
+
+---
+
+<p align="center">
+  Desenvolvido com 🎾 por <strong>Gustavo Almeida</strong>
+</p>

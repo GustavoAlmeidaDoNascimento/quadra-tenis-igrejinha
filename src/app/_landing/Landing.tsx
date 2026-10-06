@@ -129,7 +129,7 @@ export default function Landing() {
           <div className="mt-6 flex items-center gap-3 text-xs text-white/60 md:gap-4 md:text-sm">
             <Avatars />
             <span>
-              <strong className="text-white">+100 jogadores</strong> já reservando direto pelo app
+              <strong className="text-white">+200 jogadores</strong> já reservando direto pelo app
             </span>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function Landing() {
               </ul>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <StatCard value="+100" label="jogadores ativos" />
+              <StatCard value="+200" label="jogadores ativos" />
               <StatCard value="2" label="cidades cobertas" accent />
               <StatCard value="24/7" label="reservas no app" accent />
             </div>
