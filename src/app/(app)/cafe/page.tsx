@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Copy, Check } from 'lucide-react';
 
 const PIX_KEY_DISPLAY = '64.523.312/0001-62';
@@ -113,16 +112,7 @@ export default function CafePage() {
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-                  Sou um engenheiro de software, gosto de projetos de final de semana como esse! Fundador do{' '}
-                  <Link
-                    href="https://bibliotech.tech"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-emerald-600 hover:text-emerald-700 underline font-medium"
-                  >
-                    bibliotech.tech
-                  </Link>
-                  . Sempre aberto a um bom feedback!
+                  Sou um engenheiro de software, gosto de projetos de final de semana como esse! Sempre aberto a um bom feedback!
                 </p>
                 <p className="mt-3 text-sm">
                   <a
