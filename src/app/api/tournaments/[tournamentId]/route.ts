@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/firebase/verifyRequest';
 import { Timestamp } from 'firebase-admin/firestore';
 import { adminDb, hasAdminCredentials } from '@/lib/firebase/admin';
 import {
@@ -41,6 +42,8 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ tournamentId: string }> }
 ) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(NO_CREDENTIALS, { status: 503 });
   }
@@ -58,7 +61,7 @@ export async function PATCH(
 
     const body = await request.json().catch(() => ({}));
 
-    const manager = await ensureCourtManager(body?.userId, tournament.courtId);
+    const manager = await ensureCourtManager(authUser.uid, tournament.courtId);
     if (isFailure(manager)) {
       return NextResponse.json({ error: manager.error }, { status: manager.status });
     }
@@ -130,6 +133,8 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ tournamentId: string }> }
 ) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(NO_CREDENTIALS, { status: 503 });
   }
@@ -137,7 +142,7 @@ export async function DELETE(
   try {
     const { tournamentId } = await context.params;
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const userId = authUser.uid;
 
     if (!tournamentId?.trim()) {
       return NextResponse.json({ error: 'ID do campeonato é obrigatório' }, { status: 400 });

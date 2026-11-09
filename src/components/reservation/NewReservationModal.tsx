@@ -23,6 +23,7 @@ import { CourtReservationRules, DurationMode } from '@/lib/types';
 import { getRecommendedPartners, type PartnerStat } from '@/lib/queries/stats';
 import { useWeather, summarizeRange, mapWeatherCode } from '@/lib/weather';
 import WeatherBadge from '@/components/ui/WeatherBadge';
+import { authFetch } from '@/lib/authFetch';
 
 interface User {
   id: string;
@@ -414,7 +415,7 @@ export default function NewReservationModal({ isOpen, onClose, onSuccess, select
       const startAtISO = startAtLocal.toISOString();
       try {
         const endAtISO = getEndAtISO(dateStr);
-        const response = await fetch(`/api/reservations/${reservationId.trim()}`, {
+        const response = await authFetch(`/api/reservations/${reservationId.trim()}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -465,7 +466,7 @@ export default function NewReservationModal({ isOpen, onClose, onSuccess, select
 
     try {
       const endAtISO = getEndAtISO(dateStr);
-      const response = await fetch('/api/reservations', {
+      const response = await authFetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

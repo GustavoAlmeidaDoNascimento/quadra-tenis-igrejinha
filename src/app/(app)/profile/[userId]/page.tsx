@@ -57,6 +57,7 @@ import {
   type ReservationListItem,
 } from '@/lib/queries/stats';
 import { getPatenteAtual } from '@/lib/patents';
+import { authFetch } from '@/lib/authFetch';
 
 type PageProps = {
   params: Promise<{ userId: string }>;
@@ -198,7 +199,7 @@ export default function PerfilUserIdPage({ params }: PageProps) {
       if (selectedImage) {
         const fd = new FormData();
         fd.append('image', selectedImage);
-        const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
+        const res = await authFetch('/api/upload-image', { method: 'POST', body: fd });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data?.error ?? 'Erro ao enviar foto.');
@@ -279,8 +280,7 @@ export default function PerfilUserIdPage({ params }: PageProps) {
     setChallenging(true);
     setDesafioError('');
     try {
-      const checkRes = await fetch(
-        `/api/reservations/check-slot?startAtISO=${encodeURIComponent(startAt.toISOString())}`
+      const checkRes = await authFetch(`/api/reservations/check-slot?startAtISO=${encodeURIComponent(startAt.toISOString())}`
       );
       const checkData = (await checkRes.json().catch(() => ({}))) as { available?: boolean; error?: string };
       if (!checkData.available) {
@@ -298,7 +298,7 @@ export default function PerfilUserIdPage({ params }: PageProps) {
         proposedStartAt: Timestamp.fromDate(startAt),
         createdAt: serverTimestamp(),
       });
-      fetch('/api/notify-challenge', {
+      authFetch('/api/notify-challenge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -336,8 +336,7 @@ export default function PerfilUserIdPage({ params }: PageProps) {
     if (!auth.currentUser) return;
     setCancelling(true);
     try {
-      const res = await fetch(
-        `/api/reservations?id=${encodeURIComponent(reservationId)}&userId=${encodeURIComponent(auth.currentUser.uid)}`,
+      const res = await authFetch(`/api/reservations?id=${encodeURIComponent(reservationId)}&userId=${encodeURIComponent(auth.currentUser.uid)}`,
         { method: 'DELETE' }
       );
       const data = await res.json().catch(() => ({}));

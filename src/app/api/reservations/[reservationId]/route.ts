@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser, forbidden } from '@/lib/firebase/verifyRequest';
 import { Timestamp } from 'firebase-admin/firestore';
 import { adminDb, hasAdminCredentials } from '@/lib/firebase/admin';
 import { sendParticipantAddedEmail } from '@/lib/brevo';
@@ -9,6 +10,8 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ reservationId: string }> }
 ) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(
       { error: 'Servidor não configurado: chave de conta de serviço do Firebase não definida.' },
@@ -20,6 +23,7 @@ export async function DELETE(
     const { reservationId } = await context.params;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    if (userId && userId !== authUser.uid) return forbidden();
 
     if (!reservationId?.trim() || !userId?.trim()) {
       return NextResponse.json(
@@ -80,6 +84,8 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ reservationId: string }> }
 ) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(
       {
@@ -101,6 +107,7 @@ export async function PATCH(
 
     const body = await request.json().catch(() => ({}));
     const { userId, participantIds, startAtISO, endAtISO } = body;
+    if (userId !== authUser.uid) return forbidden();
 
     if (!userId || typeof userId !== 'string' || !userId.trim()) {
       return NextResponse.json(

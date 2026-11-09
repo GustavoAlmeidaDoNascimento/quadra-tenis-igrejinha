@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/firebase/verifyRequest';
 import { adminDb, hasAdminCredentials } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { normalizeCourtId } from '@/lib/courts';
@@ -9,6 +10,8 @@ import { formatConflictMessage } from '@/lib/reservationConflicts';
  * GET /api/reservations/check-slot?startAtISO=...&courtId=quadra_1
  */
 export async function GET(request: NextRequest) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(
       { available: false, error: 'Servidor não configurado.' },
