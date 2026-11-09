@@ -159,7 +159,7 @@ Acompanhamento de interações e convites sem necessidade de recarregar a págin
 ## 🔒 Segurança
 
 - Reservas, torneios, upload de imagem e e-mails passam por rotas do servidor que exigem login (Firebase ID token verificado pelo Admin SDK).
-- As regras do Firestore ficam versionadas em [`firestore.rules`](firestore.rules): reservas só são gravadas pelo servidor, e ninguém cria post, comentário, notificação ou desafio em nome de outra pessoa.
+- As regras do Firestore ficam versionadas em [`firestore.rules`](firestore.rules): reservas passam a ser gravadas só pelo servidor, e ninguém cria post, comentário, notificação ou desafio em nome de outra pessoa (detalhes e ordem de publicação em [`FIRESTORE_RULES.md`](FIRESTORE_RULES.md)).
 
 ## ▶️ Rodar localmente
 
