@@ -1,5 +1,7 @@
 # Firestore security rules
 
+> ⚠️ **Antes de publicar estas regras:** o app nativo ([quadra-livre-app](https://github.com/GustavoAlmeidaDoNascimento/quadra-livre-app), `lib/reservations.ts` e `app/(tabs)/reservar.tsx`) ainda grava `reservations` e `reservationParticipants` direto no Firestore. Com estas regras essas escritas passam a ser negadas. Migre o app para chamar `/api/reservations` (com `Authorization: Bearer <idToken>`) antes de publicar, ou publique só quando o app nativo ainda não estiver em uso.
+
 As regras versionadas ficam em [`firestore.rules`](firestore.rules). Publique com `firebase deploy --only firestore:rules` ou cole no Firebase Console (Firestore Database → Rules):
 
 ```javascript
