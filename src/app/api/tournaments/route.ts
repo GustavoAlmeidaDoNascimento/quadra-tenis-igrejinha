@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/firebase/verifyRequest';
 import { Timestamp } from 'firebase-admin/firestore';
 import { adminDb, hasAdminCredentials } from '@/lib/firebase/admin';
 import {
@@ -21,6 +22,8 @@ const NO_CREDENTIALS = {
  * POST /api/tournaments { userId, courtId, name, periods: [{ startAtISO, endAtISO }] }
  */
 export async function POST(request: NextRequest) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(NO_CREDENTIALS, { status: 503 });
   }
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: courtId.error }, { status: courtId.status });
     }
 
-    const manager = await ensureCourtManager(body?.userId, courtId);
+    const manager = await ensureCourtManager(authUser.uid, courtId);
     if (isFailure(manager)) {
       return NextResponse.json({ error: manager.error }, { status: manager.status });
     }

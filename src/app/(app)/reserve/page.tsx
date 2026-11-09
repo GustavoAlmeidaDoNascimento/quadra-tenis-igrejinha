@@ -17,6 +17,7 @@ import WeatherBadge from '@/components/ui/WeatherBadge';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/Toast';
 import { logError } from '@/lib/errors';
+import { authFetch } from '@/lib/authFetch';
 
 interface DayTab {
   date: Date;
@@ -367,8 +368,7 @@ export default function ReservarPage() {
     if (!auth.currentUser) return;
     setCancelling(true);
     try {
-      const res = await fetch(
-        `/api/reservations?id=${encodeURIComponent(reservationId)}&userId=${encodeURIComponent(auth.currentUser.uid)}`,
+      const res = await authFetch(`/api/reservations?id=${encodeURIComponent(reservationId)}&userId=${encodeURIComponent(auth.currentUser.uid)}`,
         { method: 'DELETE' }
       );
       const data = await res.json().catch(() => ({}));
@@ -393,8 +393,7 @@ export default function ReservarPage() {
     if (!auth.currentUser) return;
     setLeaving(true);
     try {
-      const res = await fetch(
-        `/api/reservations/${encodeURIComponent(reservationId)}?userId=${encodeURIComponent(auth.currentUser.uid)}`,
+      const res = await authFetch(`/api/reservations/${encodeURIComponent(reservationId)}?userId=${encodeURIComponent(auth.currentUser.uid)}`,
         { method: 'DELETE' }
       );
       const data = await res.json().catch(() => ({}));

@@ -18,6 +18,7 @@ import {
 import { auth, db } from '@/lib/firebase/client';
 import { Check, X, Swords, XCircle, Trash2, AtSign, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { authFetch } from '@/lib/authFetch';
 
 interface ChallengeWithAuthor {
   id: string;
@@ -379,7 +380,7 @@ export default function NotificacoesPage() {
     setAcceptError(null);
     setAcceptErrorChallengeId(null);
     try {
-      const res = await fetch('/api/reservations', {
+      const res = await authFetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

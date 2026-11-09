@@ -1,6 +1,6 @@
 # Firestore security rules
 
-Paste these rules in the Firebase Console (Firestore Database → Rules):
+As regras versionadas ficam em [`firestore.rules`](firestore.rules). Publique com `firebase deploy --only firestore:rules` ou cole no Firebase Console (Firestore Database → Rules):
 
 ```javascript
 rules_version = '2';
@@ -18,27 +18,25 @@ service cloud.firestore {
     }
     
     // Reservations
+    // Só o servidor (API /api/reservations, Admin SDK) cria, altera ou apaga reservas.
+    // Assim ninguém pula a checagem de conflito/limites escrevendo direto pelo client.
     match /reservations/{reservationId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null && 
-                      request.auth.uid == resource.data.createdById;
-      // No direct updates (use delete + create)
-      allow update: if false;
+      allow create, update, delete: if false;
     }
     
     // Reservation participants
+    // Participantes também só são escritos pelo servidor.
     match /reservationParticipants/{participantId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null;
-      allow update: if false;
+      allow create, update, delete: if false;
     }
     
     // Posts
     match /posts/{postId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.authorId == request.auth.uid;
       // Author can edit/delete; any authenticated user can update only likedBy (like) or commentCount (comment)
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.authorId
@@ -49,7 +47,8 @@ service cloud.firestore {
 
       match /comments/{commentId} {
         allow read: if request.auth != null;
-        allow create: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid;
         allow update, delete: if request.auth != null && request.auth.uid == resource.data.authorId;
       }
     }
@@ -57,7 +56,9 @@ service cloud.firestore {
     // Notifications (e.g. mention in post/comment, like)
     match /notifications/{notificationId} {
       allow read, delete: if request.auth != null && request.auth.uid == resource.data.toUserId;
-      allow create: if request.auth != null;
+      // Ninguém cria notificação em nome de outra pessoa.
+      allow create: if request.auth != null
+        && request.resource.data.fromUserId == request.auth.uid;
       allow update: if request.auth != null && request.auth.uid == resource.data.toUserId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
     }
@@ -65,7 +66,8 @@ service cloud.firestore {
     // Challenges
     match /challenges/{challengeId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.fromUserId == request.auth.uid;
       allow update: if request.auth != null && 
                       (request.auth.uid == resource.data.toUserId || 
                        request.auth.uid == resource.data.fromUserId);

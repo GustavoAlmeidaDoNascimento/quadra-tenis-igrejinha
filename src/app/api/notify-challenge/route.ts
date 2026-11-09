@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser, forbidden } from '@/lib/firebase/verifyRequest';
 import { adminDb, hasAdminCredentials } from '@/lib/firebase/admin';
 import { sendChallengeNotificationEmail } from '@/lib/brevo';
 
 const NOTIFICATIONS_URL = 'https://teniscreas.vercel.app/notifications';
 
 export async function POST(request: NextRequest) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(
       {
@@ -18,6 +21,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const { fromUserId, toUserId, proposedStartAtISO } = body;
+    if (fromUserId !== authUser.uid) return forbidden();
 
     if (!fromUserId || typeof fromUserId !== 'string' || !fromUserId.trim()) {
       return NextResponse.json(

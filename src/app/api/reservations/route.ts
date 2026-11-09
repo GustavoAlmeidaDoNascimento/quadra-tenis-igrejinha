@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser, forbidden } from '@/lib/firebase/verifyRequest';
 import { adminDb, hasAdminCredentials } from '@/lib/firebase/admin';
 import { validateReservation } from '@/lib/validators/reservationValidator';
 import { normalizeCourtId, getCourtName } from '@/lib/courts';
@@ -8,6 +9,8 @@ import { Timestamp } from 'firebase-admin/firestore';
 const APP_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://teniscreas.vercel.app';
 
 export async function POST(request: NextRequest) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(
       {
@@ -21,6 +24,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const { userId, startAtISO, endAtISO, date, hour, minute, participantIds, challengeId, courtId } = body;
+    if (userId !== authUser.uid) return forbidden();
 
     if (!userId || typeof userId !== 'string' || !userId.trim()) {
       return NextResponse.json(
@@ -190,6 +194,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   if (!hasAdminCredentials) {
     return NextResponse.json(
       {
@@ -204,6 +210,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const reservationId = searchParams.get('id');
     const userId = searchParams.get('userId');
+    if (userId && userId !== authUser.uid) return forbidden();
 
     if (!reservationId || !userId) {
       return NextResponse.json(

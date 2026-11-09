@@ -30,6 +30,7 @@ import { getHoursRanking, type HoursRankingEntry } from '@/lib/ranking';
 import { MENTION_REGEX } from '@/components/social/MentionTextarea';
 import { MentionTextarea } from '@/components/social/MentionTextarea';
 import { PostContent } from '@/components/social/PostContent';
+import { authFetch } from '@/lib/authFetch';
 
 /** Retorna IDs únicos de usuários mencionados no texto (formato @[Nome](userId)) */
 function getMentionedUserIds(content: string): string[] {
@@ -381,7 +382,7 @@ export default function SocialPage() {
       if (selectedImage) {
         const fd = new FormData();
         fd.append('image', selectedImage);
-        const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
+        const res = await authFetch('/api/upload-image', { method: 'POST', body: fd });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data?.error ?? 'Erro ao enviar imagem.');

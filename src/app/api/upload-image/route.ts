@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/firebase/verifyRequest';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export async function POST(request: NextRequest) {
+  const authUser = await requireUser(request);
+  if (authUser instanceof NextResponse) return authUser;
   const apiKey = process.env.IMGBB_API_KEY;
   if (!apiKey?.trim()) {
     return NextResponse.json(

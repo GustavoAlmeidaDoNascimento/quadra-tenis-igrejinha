@@ -17,6 +17,7 @@ import TournamentEditor, {
   type PeriodDraft,
   type TournamentDraft,
 } from '@/components/tournament/TournamentEditor';
+import { authFetch } from '@/lib/authFetch';
 
 interface PeriodView {
   id: string;
@@ -153,12 +154,12 @@ export default function CampeonatosPage() {
 
     try {
       const response = tournamentId
-        ? await fetch(`/api/tournaments/${encodeURIComponent(tournamentId)}`, {
+        ? await authFetch(`/api/tournaments/${encodeURIComponent(tournamentId)}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: uid, name: draft.name, periods }),
           })
-        : await fetch('/api/tournaments', {
+        : await authFetch('/api/tournaments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: uid, courtId, name: draft.name, periods }),
@@ -194,8 +195,7 @@ export default function CampeonatosPage() {
 
     setDeletingId(tournament.id);
     try {
-      const response = await fetch(
-        `/api/tournaments/${encodeURIComponent(tournament.id)}?userId=${encodeURIComponent(uid)}`,
+      const response = await authFetch(`/api/tournaments/${encodeURIComponent(tournament.id)}?userId=${encodeURIComponent(uid)}`,
         { method: 'DELETE' }
       );
       const data = await response.json().catch(() => ({}));
