@@ -139,8 +139,9 @@ Acompanhamento de interações e convites sem necessidade de recarregar a págin
 | **Estilização** | Tailwind CSS | Design responsivo, paleta visual esportiva moderna e alta fidelidade mobile. |
 | **Autenticação** | Firebase Auth | Fluxo Google One-Tap rápido e seguro para onboarding em segundos. |
 | **Banco de Dados** | Cloud Firestore | Sincronização em tempo real de quadras, feeds e notificações via WebSockets/listeners. |
-| **Regras / Backend** | Next.js Route Handlers + Firebase Admin | Camada com privilégios de serviço para validação anti-race-condition de reservas. |
-| **Armazenamento** | Firebase Storage | Upload otimizado de fotos de perfil e imagens do feed social. |
+| **Regras / Backend** | Next.js Route Handlers + Firebase Admin | Camada com privilégios de serviço para validação anti-race-condition de reservas. Toda rota valida o Firebase ID token e usa o uid do token, nunca um id enviado pelo navegador. |
+| **Imagens** | ImgBB API (via rota autenticada no servidor) | Hospedagem gratuita das fotos de perfil e do feed, sem custo de storage; a chave fica só no servidor. |
+| **App mobile** | Expo / React Native ([quadra-livre-app](https://github.com/GustavoAlmeidaDoNascimento/quadra-livre-app)) | App nativo com login Google, usando o mesmo projeto Firebase da versão web. |
 | **E-mails Transacionais** | Brevo API | Notificações de confirmação de agendamento e convites de desafio. |
 | **Meteorologia** | Open-Meteo API | Previsão climática precisa por coordenada geográfica sem atrito de autenticação. |
 
@@ -148,13 +149,26 @@ Acompanhamento de interações e convites sem necessidade de recarregar a págin
 
 ## 📈 Impacto e Resultados
 
-- **100% de adesão na comunidade local:** A transição do WhatsApp para a plataforma foi completa entre os praticantes regulares da região.
-- **Zero sobreposições de horários:** Conflitos e discussões de horário foram totalmente eliminados desde o lançamento.
+- **Adesão da comunidade local:** os jogadores regulares da região trocaram o grupo de WhatsApp pela plataforma.
+- **Fim das sobreposições de horário:** a checagem de conflito no servidor impede duas reservas no mesmo horário da mesma quadra.
 - **Escalabilidade regional:** O sistema começou atendendo uma única quadra em Igrejinha e expandiu para Três Coroas e novos polos da serra.
 - **Mais de 200 atletas ativos** interagindo, organizando torneios e marcando seus treinos de forma autônoma.
 
 ---
 
+## 🔒 Segurança
+
+- Reservas, torneios, upload de imagem e e-mails passam por rotas do servidor que exigem login (Firebase ID token verificado pelo Admin SDK).
+- As regras do Firestore ficam versionadas em [`firestore.rules`](firestore.rules): reservas só são gravadas pelo servidor, e ninguém cria post, comentário, notificação ou desafio em nome de outra pessoa.
+
+## ▶️ Rodar localmente
+
+```bash
+npm install
+cp .env.example .env.local   # Firebase (client + Admin), ImgBB e Brevo
+npm run dev                  # http://localhost:3000
+```
+
 <p align="center">
-  Desenvolvido com 🎾 por <strong>Gustavo Almeida</strong>
+  Desenvolvido com 🎾 por <a href="https://gustavoalmeida.tech"><strong>Gustavo Almeida</strong></a> · <a href="https://quadralivre.site">quadralivre.site</a>
 </p>
